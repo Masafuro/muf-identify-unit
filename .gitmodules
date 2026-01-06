@@ -1,0 +1,3 @@
+[submodule "muf"]
+	path = muf
+	url = https://github.com/Masafuro/MUF.git

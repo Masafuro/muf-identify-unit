@@ -1,0 +1,12 @@
+# Project-root
+# /docker-compose.yml
+include:
+  # muf SDK 不要なものはコメントアウトする。
+  - muf/redis/docker-compose.yml
+  - muf/monitor/docker-compose.yml
+#  - muf/terminal/docker-compose.yml
+#  - muf/echo-unit/docker-compose.yml
+#  - muf/check-unit/docker-compose.yml
+  
+  # identify-unit
+  - identify-unit/docker-compose.yml

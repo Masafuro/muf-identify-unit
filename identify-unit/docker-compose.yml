@@ -1,0 +1,33 @@
+services:
+  muf-identify-unit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: muf-identify-unit
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../muf:/app/muf
+      - .:/app/identify-unit
+    environment:
+      - REDIS_HOST=muf-redis
+      - SCYLLA_HOST=muf-scylla
+    env_file:
+      - .env
+    depends_on:
+      - muf-scylla
+    networks:
+      - muf-network
+    restart: always
+
+  muf-scylla:
+    image: scylladb/scylla:latest
+    container_name: muf-scylla
+    command: --smp 1 --memory 1G --overprovisioned 1 --api-address 0.0.0.0
+    networks:
+      - muf-network
+    restart: always
+
+networks:
+  muf-network:
+    name: muf-network
