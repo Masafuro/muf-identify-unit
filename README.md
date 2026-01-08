@@ -1,7 +1,7 @@
 # muf-identify-unit
 
 ## 概要
-muf-identify-unitは、MUF（Masafuro Unit Framework）アーキテクチャにおいて認証およびセッション管理を担当するゲートウェイユニットです。ユーザーの資格情報をMUFネットワークから隔離されたScyllaDBで保護し、多要素認証（MFA）を通過したユーザーのみをシステム全体へ公開する仕組みを採用しています。
+muf-identify-unitは、MUF（Memory Unit Framework）アーキテクチャにおいて認証およびセッション管理を担当するゲートウェイユニットです。ユーザーの資格情報をMUFネットワークから隔離されたScyllaDBで保護し、多要素認証（MFA）を通過したユーザーのみをシステム全体へ公開する仕組みを採用しています。
 
 ## MUFライブラリ及びコアユニット
 [MUF:Memory Unit Framework](https://github.com/Masafuro/MUF)
