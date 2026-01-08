@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>2FA初期設定 - Identify Unit</title>
+    <style>
+        /* heightをmin-heightに変更し、上下に余白を追加してスクロールを許容します */
+        body { 
+            font-family: sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            background-color: #f0f2f5; 
+            padding: 20px 0;
+        }
+        .container { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            text-align: center; 
+            max-width: 400px; 
+            width: 90%; /* モバイル端末での表示を考慮 */
+        }
+        /* QRコードを表示するエリアのサイズを固定し、中央に配置します */
+        .qr-code { 
+            margin: 1.5rem auto; 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            width: fit-content;
+            background: white;
+        }
+        /* 画像の最大幅を制限し、レスポンシブに対応させます */
+        .qr-code img { 
+            display: block;
+            max-width: 200px; 
+            width: 100%; 
+            height: auto; 
+        }
+        .secret-key { 
+            background: #f8f9fa; 
+            padding: 0.75rem; 
+            font-family: monospace; 
+            font-size: 0.95rem; 
+            margin-bottom: 1.5rem; 
+            word-break: break-all; 
+            border: 1px dashed #ccc;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 0.5rem; 
+            margin-bottom: 1rem; 
+            box-sizing: border-box; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            letter-spacing: 0.5rem; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button { 
+            width: 100%; 
+            padding: 0.75rem; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 1rem; 
+            font-weight: bold;
+        }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>2FAの設定</h2>
+        <p style="font-size: 0.9rem; color: #555;">認証アプリ（Google Authenticator等）で以下のQRコードをスキャンしてください。</p>
+        <div class="qr-code">
+            <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code">
+        </div>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">QRコードをスキャンできない場合は、以下のキーを手動で入力してください。</p>
+        <div class="secret-key">{{ secret }}</div>
+        <form action="/totp/setup" method="post">
+            <input type="hidden" name="secret" value="{{ secret }}">
+            <input type="text" name="code" placeholder="000000" required maxlength="6" pattern="\d{6}">
+            <button type="submit">設定を完了してログイン</button>
+        </form>
+    </div>
+</body>
+</html>

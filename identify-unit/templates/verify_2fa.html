@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>2FA認証 - Identify Unit</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; width: 320px; }
+        input[type="text"] { width: 100%; padding: 0.5rem; margin-bottom: 1rem; box-sizing: border-box; font-size: 1.5rem; text-align: center; letter-spacing: 0.5rem; }
+        button { width: 100%; padding: 0.75rem; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        button:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>2FA認証</h2>
+        <p>認証アプリに表示されている6桁のコードを入力してください。</p>
+        <form action="/totp/verify" method="post">
+            <input type="text" name="code" placeholder="000000" required autofocus maxlength="6" pattern="\d{6}">
+            <button type="submit">認証</button>
+        </form>
+        <p><a href="/login" style="color: #666; font-size: 0.9rem; text-decoration: none;">ログイン画面に戻る</a></p>
+    </div>
+</body>
+</html>

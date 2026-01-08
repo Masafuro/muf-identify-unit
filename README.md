@@ -1,33 +1,34 @@
 # muf-identify-unit
 
 ## 概要
-muf-identify-unitは、MUF（Masafuro Unit Framework）アーキテクチャにおいて認証およびセッション管理を専門に担当するユニットです。本ユニットはユーザーの新規登録とログイン処理を行い、認証に成功したユーザーに対して一意のセッションIDを発行します。発行されたセッション情報はRedisに保持されるとともに、MUFネットワーク上のkeep空間を通じてシステム全体へ構造化データとして公開されます。
+muf-identify-unitは、MUF（Masafuro Unit Framework）アーキテクチャにおいて認証およびセッション管理を担当するゲートウェイユニットです。ユーザーの資格情報をMUFネットワークから隔離されたScyllaDBで保護し、多要素認証（MFA）を通過したユーザーのみをシステム全体へ公開する仕組みを採用しています。
 
 ## MUFライブラリ及びコアユニット
 [MUF:Memory Unit Framework](https://github.com/Masafuro/MUF)
 
 ## システム構成
-本ユニットはFastAPIによるWebインターフェースを提供し、永続データストレージとしてScyllaDB、セッション管理およびメッセージング基盤としてRedisを利用します。フロントエンドにはBootstrap 5を採用しており、PCやスマートフォンから利用可能なレスポンシブデザインに対応しています。
+| コンポーネント | 役割 | 備考 |
+| :--- | :--- | :--- |
+| **FastAPI** | Webインターフェース | 非同期処理による高効率なリクエストハンドリング |
+| **ScyllaDB** | 永続データストレージ | ユーザーID、bcryptハッシュ化パスワード、2FA秘密鍵の保持 |
+| **Redis** | セッション・メッセージング | MUFネットワークの共有メモリ空間として機能 |
+| **Bootstrap 5** | フロントエンドUI | レスポンシブデザインによるマルチデバイス対応 |
 
 ## 環境設定（.env）
-動作には以下の環境変数の設定が必要です。各値はシステムのネットワーク構成に合わせて適切に設定してください。
-
 | 変数名 | 説明 | デフォルト値 |
 | :--- | :--- | :--- |
 | REDIS_HOST | MUF基盤となるRedisのホスト名 | muf-redis |
 | SCYLLA_HOST | ユーザー情報を保持するScyllaDBのホスト名 | muf-scylla |
 | SCYLLA_KEYSPACE | ScyllaDB内で使用するキースペース名 | muf_auth |
 | SESSION_TTL | セッションの有効期限（秒） | 3600 |
-| LOGIN_REDIRECT_URL | ログイン成功後のリダイレクト先URL | / |
+| COOKIE_SECURE | CookieのSecure属性（HTTPS環境ではTrue） | False |
+| LOGIN_REDIRECT_URL | 認証成功後のリダイレクト先URL | (要指定) |
 
 ## MUFネットワーク仕様
-ログイン成功時、本ユニットは以下のパスに対してセッション属性情報を公開します。
-
 ### 状態公開パス
-muf/muf-identify-unit/keep/{session_id}
+muf/identify-unit/keep/{session_id}
 
 ### 公開データ構造（JSON）
-他のユニットはこのパスを参照することで、以下の情報を取得できます。
 | フィールド名 | 型 | 説明 |
 | :--- | :--- | :--- |
 | username | string | ログインしたユーザーの名称 |
@@ -35,25 +36,40 @@ muf/muf-identify-unit/keep/{session_id}
 | login_at | string | ISO8601形式のログイン日時 |
 
 ## ファイル構成
-本ユニットは責務を分離するために以下のファイル構造をとっています。
+本ユニットは責務を分離するために以下の階層構造をとっています。
 
-- config.py: 環境変数と定数の管理
-- database.py: ScyllaDBおよびRedisへの接続と初期化処理
-- main.py: FastAPIによるルーティングとMUFメッセージングの実装
-- templates/: ログインおよび新規登録用HTMLテンプレート
-- __init__.py: パッケージ化のための初期化ファイル
+* **identify-unit/routers/**
+    * `register.py`: ユーザー新規登録ロジック（bcryptハッシュ化）
+    * `login.py`: パスワード認証および2FA分岐処理
+    * `totp_setup.py`: 2FA初期設定およびQRコード生成
+    * `totp_verify.py`: 2FAコード検証処理
+* **identify-unit/services/**
+    * `auth_service.py`: Redis/MUFネットワークへのセッション登録共通処理
+* **identify-unit/templates/**
+    * 各画面のHTMLテンプレート（Jinja2）
+* `database.py`: ScyllaDBおよびRedisへの接続定義と初期化
+* `manage.py`: データベース管理・リカバリ用CLIツール
 
-## クライアント側のセッション仕様
+## 管理コマンド（manage.py）
+ScyllaDBのメンテナンスは、Dockerコンテナ内から`manage.py`を介して行います。
 
-認証成功時にブラウザへ発行されるCookieの仕様は以下の通りです。
+* **DB初期化・スキーマ更新**
+    `python -m identify-unit.manage init-db`
+* **ユーザー一覧と2FA設定状況の確認**
+    `python -m identify-unit.manage list`
+* **特定のユーザーの2FA設定をリセット**
+    `python -m identify-unit.manage reset-2fa <username>`
 
+## セッションCookie仕様
 | 項目 | 仕様 | 備考 |
 | :--- | :--- | :--- |
-| **Cookie名** | session_id | 認証セッションを識別するためのランダムなトークン |
-| **HttpOnly** | 有効 (True) | JavaScriptからのアクセスを禁止し、XSSによるセッション盗奪を防止 |
-| **Secure** | 無効 (False) | 開発環境のHTTP通信を考慮した設定（本番環境ではTrueを推奨） |
-| **SameSite** | Lax | CSRF対策と外部サイトからの遷移時の利便性を両立 |
-| **有効期限** | SESSION_TTLに準拠 | 環境変数で指定された秒数（デフォルト3600秒）が適用 |
+| **session_id** | 本セッション | 2FA完了後に発行される認証トークン |
+| **temp_user** | 一時Cookie | 2FA完了までユーザーを識別（5分で自動消滅） |
+| **HttpOnly** | 有効 (True) | JavaScriptからのアクセスを禁止 |
+| **Secure** | 変数依存 | `.env`の`COOKIE_SECURE`設定に従う |
+| **SameSite** | Lax | CSRF対策と利便性を両立 |
 
 ## 導入と起動
-MUF共通ネットワークが存在する環境で、docker-composeを実行することで起動します。起動プロセスにおいてScyllaDBの準備が完了するまで自動的にリトライ接続を行うため、データベースの起動完了を待たずにユニットを立ち上げることが可能です。
+1. Dockerfileからイメージをビルドします。bcryptの互換性のためにバージョン3系を固定して利用します。
+2. `docker-compose up`を実行してサービスを開始します。
+3. 初回起動時、または2FA機能の追加時には、管理コマンド`init-db`を実行してScyllaDBのスキーマを最新状態に更新してください。
